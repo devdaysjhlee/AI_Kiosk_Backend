@@ -4,7 +4,7 @@ WASSUP EST AI 모델 개발자 양성과정 6회차에서 진행된 2개월간�
 
 - 기간 : 25.02.08 - 25.04.07 (2개월) 
 - 인원 : AI 모델 2인, 안드로이드 1인, 백엔드 1인
-- 사용 기술 : Android, SpringBoot, Flask, MySQL, TensorFlow, CV2, Numpy, Yolo, Cnn, RasNet, EfficientNet, Github 
+- 사용 기술 : Android, SpringBoot, Flask, MySQL, ngork, TensorFlow, openCV, Numpy, Yolo, Cnn, RasNet, EfficientNet, Github
 - 요약 : 안드로이드 기반으로 사용자의 안면을 인식해 연령대를 예측하고 맞춤 UI를 보여주는 키오스크
 - 담당 부분 : MySQL, SpringBoot, Flask
 
@@ -31,17 +31,19 @@ WASSUP EST AI 모델 개발자 양성과정 6회차에서 진행된 2개월간�
 
 # MySQL
 
-MySQL로 만들어진 DB는 맥도날드 주문 페이지에서 api를 통해 가져온 메뉴 정보를 저장하는 테이블과 주문 내역을 저장하는 테이블로 이루어져 있습니다. 
-
 <img width="181" alt="image" src="https://github.com/user-attachments/assets/d0932b1b-ebfe-4157-929b-b327dcb7c49f" />
 
-menu는 맥도날드 메뉴 정보를 저장하고, sales는 주문 내역을 저장합니다. 
+MySQL로 만들어진 DB는 맥도날드 주문 페이지에서 api를 통해 가져온 메뉴 정보를 저장하는 테이블과 주문 내역을 저장하는 테이블로 이루어져 있습니다. 
 
 ### menu
 <img width="804" alt="image" src="https://github.com/user-attachments/assets/44ff7cdc-b15f-4cc0-95d4-af3125a6e303" />
 
 ### sales
-<img width="685" alt="image" src="https://github.com/user-attachments/assets/b5e03f95-77ea-47f5-a13f-31baeb852437" />
+![image](https://github.com/user-attachments/assets/f7003578-ef5a-4a40-9433-b33b7eb14965)
+
+menu는 맥도날드 메뉴 정보를 저장하고, sales는 주문 내역을 저장합니다. 
+
+메뉴 정보는 안드로이드 UI 구성시 사용되고, 주문 내역은 결제 단계에서 연령대별 맞춤 메뉴 추천에 사용됩니다. 
 
 # SpringBoot
 
@@ -49,17 +51,47 @@ menu는 맥도날드 메뉴 정보를 저장하고, sales는 주문 내역을 �
 
 <img width="173" alt="image" src="https://github.com/user-attachments/assets/f5192781-5edb-49bf-a266-9f582efd7c99" />
 
+### 버전
+- Java 17
+- SpringBoot 3.4.4
+- mysql-connector-java 8.0.33
+- lombok 1.18.24
+
+### 기능
+
+SpringBoot에서는 JPA를 사용해 MySQL DB를 직접 관리하고, 안드로이드에서 사용할 8080번 포트 Rest API를 제공합니다. 
+
+- get / : home jsp로 이동합니다. (HomeController)
+- get /menus : 메뉴 정보 json 가져옵니다. (MenuController)
+- get /upload : 안면 인식 테스트 jsp로 이동합니다. (ImageUploadController)
+- post /sales : DB에 판매 기록을 업데이트합니다. (SalesController)
+- post /api/classify : 이미지 프레임 전송하여 flask 서버에서의 분류 결과를 가져옵니다. (ClassificationController)
+
+ngrok을 사용하여 8080포트의 임시 URL을 만들어 안드로이드에서 호출할 수 있게 하였습니다. 
+
+# Flask
+
+![Screenshot 2025-04-01 at 11 06 57 AM](https://github.com/user-attachments/assets/8ea3c131-0c18-44f3-b6c9-ff807c7efe5f)
+
+Flask에서는 5050번 포트 api를 통해 들어온 이미지 프레임에서 opencv, yolo를 사용해 안면을 검출하고
+
+cnn, rasnet, efficientnet 모델들을 앙상블 기법(가중치 0.33, 0.33, 0.34)으로 사용해 연령대를 예측해 분류합니다. 
+
+![image](https://github.com/user-attachments/assets/6818d024-f82c-4502-a555-3ab64287d120)
+
+이때 여러 개 얼굴이 검출됐을 경우 가장 크기가 큰 얼굴을 기준으로 합니다. 
+
+검출 결과 이미지를 base64로 인코딩하고, 분류 결과와 함께 json 형식으로 반환합니다. 
+
+이렇게 반환된 json은 안드로이드에서 맞춤형 UI를 설정하는 기준이 됩니다. 
+# 테스트 페이지
+
+![image](https://github.com/user-attachments/assets/26a2819d-524f-4056-b843-2de46ccf2e1c)
+![image](https://github.com/user-attachments/assets/5bcc08a3-1f56-4088-bf5a-c1d2577cd471)
+![image](https://github.com/user-attachments/assets/86a85ef9-a239-466f-b1ca-1482deca29ab)
+
+테스트 페이지는 get /upload 를 통해 접근할 수 있는 jsp를 만들어 모델을 바로 테스트할 수 있도록 만들었습니다. 
 
 
-get / -> home 화면
 
-get /menus -> 맥도날드 메뉴 정보 db에서 반환
-
-post /sales -> db에 판매 기록 업데이트
-
-post /api/classify -> 이미지 전송하여 flask에서의 분류 결과 반환
-
-get /upload -> 테스트 페이지
-
-post /upload -> 이미지 전송해 결과 테스트 
 
